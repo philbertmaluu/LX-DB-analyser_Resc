@@ -1,0 +1,12 @@
+[project]
+name = "db-analyser"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.14"
+dependencies = [
+    "oracledb>=2.0.0",
+    "mysql-connector-python>=8.0.0",
+    "psycopg2-binary>=2.9.0",
+    "python-dotenv>=1.0.0",
+]
