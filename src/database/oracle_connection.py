@@ -6,6 +6,12 @@ from .base import BaseDatabaseConnection
 from config.settings import ORACLE_HOST, ORACLE_PORT, ORACLE_SID, ORACLE_USER, ORACLE_PASSWORD
 from src.utils.db_helpers import exec_query, exec_update, safe_disconnect, check_connection
 
+# Initialize thick mode to support all password verifier types
+try:
+    oracledb.init_oracle_client()
+except Exception:
+    pass  # Thick mode already initialized or client not available
+
 
 class OracleConnection(BaseDatabaseConnection):
     """Handles Oracle database connections."""
@@ -33,7 +39,16 @@ class OracleConnection(BaseDatabaseConnection):
         self.connection = None
     
     def is_connected(self) -> bool:
-        return check_connection(self.connection, lambda: self.connection.ping())
+        try:
+            if self.connection:
+                # Try a simple query to check connection
+                cursor = self.connection.cursor()
+                cursor.execute("SELECT 1 FROM DUAL")
+                cursor.close()
+                return True
+            return False
+        except Exception:
+            return False
     
     def get_connection(self) -> Optional[oracledb.Connection]:
         return self.connection if self.is_connected() else None

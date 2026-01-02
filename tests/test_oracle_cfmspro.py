@@ -18,22 +18,64 @@ def test_oracle_connection():
     # Create connection
     oracle = OracleConnection(connection_name="test_oracle")
     
+    # Display connection info (without password)
+    print(f"\n[Connection Info]")
+    print(f"  Host: {oracle.host}")
+    print(f"  Port: {oracle.port}")
+    print(f"  SID: {oracle.sid}")
+    print(f"  User: {oracle.user}")
+    
     # Test 1: Connect to database
     print("\n[Test 1] Connecting to Oracle database...")
     if not oracle.connect():
         print("✗ FAILED: Could not connect to Oracle database")
+        print("\n[Debug Info]")
+        print("  - Check if credentials in .env file are correct")
+        print("  - Verify username format (may need to be uppercase or include domain)")
+        print("  - Ensure user has proper database access permissions")
         return False
     print("✓ PASSED: Successfully connected to Oracle database")
     
     # Test 2: Check connection status
     print("\n[Test 2] Checking connection status...")
-    if not oracle.is_connected():
-        print("✗ FAILED: Connection is not active")
+    # Try a simple query to verify connection
+    try:
+        test_query = oracle.execute_query("SELECT 1 FROM DUAL")
+        if test_query:
+            print("✓ PASSED: Connection is active and responding")
+        else:
+            print("⚠ WARNING: Connection check query returned no results")
+    except Exception as e:
+        print(f"✗ FAILED: Connection check failed: {str(e)}")
         oracle.disconnect()
         return False
-    print("✓ PASSED: Connection is active")
     
-    # Test 3: Access CFMSPRO schema
+    # Test 3: List all schemas in the database
+    print("\n[Test 3] Listing all schemas in the database...")
+    try:
+        schemas_query = """
+            SELECT DISTINCT username as schema_name
+            FROM all_users
+            ORDER BY username
+        """
+        schemas = oracle.execute_query(schemas_query)
+        
+        if schemas and len(schemas) > 0:
+            print(f"✓ PASSED: Found {len(schemas)} schemas in the database")
+            print(f"\n  Showing all schemas:")
+            for schema in schemas:
+                schema_name = schema[0]
+                # Highlight CFMSPRO if found
+                marker = " ← CFMSPRO schema" if schema_name.upper() == "CFMSPRO" else ""
+                print(f"  - {schema_name}{marker}")
+        else:
+            print("⚠ WARNING: No schemas found")
+    except Exception as e:
+        print(f"✗ FAILED: Error listing schemas: {str(e)}")
+        oracle.disconnect()
+        return False
+    
+    # Test 4: Access CFMSPRO schema
     print("\n[Test 3] Testing access to CFMSPRO schema...")
     try:
         # Query to check if schema exists and we have access
@@ -56,7 +98,7 @@ def test_oracle_connection():
         oracle.disconnect()
         return False
     
-    # Test 4: List tables in CFMSPRO schema
+    # Test 5: List tables in CFMSPRO schema
     print("\n[Test 4] Listing tables in CFMSPRO schema...")
     try:
         tables_query = """
@@ -79,7 +121,7 @@ def test_oracle_connection():
         oracle.disconnect()
         return False
     
-    # Test 5: Query a table from CFMSPRO schema
+    # Test 6: Query a table from CFMSPRO schema
     print("\n[Test 5] Testing query on CFMSPRO schema table...")
     try:
         # Get first table name

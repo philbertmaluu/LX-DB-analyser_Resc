@@ -1,0 +1,1 @@
+╰─ cd /Users/mac/Apps/DB-analyser && uv run python tests/test_oracle_cfmspro.py 2>&1 | head -30     
